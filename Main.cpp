@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include "SimulationPlane.hpp"
 #ifdef NDEBUG
 #include <Windows.h>
 #endif
@@ -9,10 +10,11 @@ int main()
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #endif
 {
-    sf::RenderWindow window(sf::VideoMode(200, 200), "SFML works!");
-    sf::CircleShape shape(100.f);
-    shape.setFillColor(sf::Color::Green);
+    sf::RenderWindow window(sf::VideoMode(800, 600), "SFML works!");
+    SimulationPlane simulationPlane;
+    simulationPlane.initialize(200, 1.0f);
 
+    sf::Clock clock;
     while (window.isOpen())
     {
         sf::Event event;
@@ -22,8 +24,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 window.close();
         }
 
+        float dt = clock.getElapsedTime().asSeconds();
+        simulationPlane.simulate(dt * 5);
+
         window.clear();
-        window.draw(shape);
+        window.draw(simulationPlane);
         window.display();
     }
 
