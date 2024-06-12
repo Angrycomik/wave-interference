@@ -9,7 +9,6 @@ int main()
 #else
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #endif
-int main()
 {
     sf::RenderWindow window(sf::VideoMode(800, 600), "SFML works!"); //later gotta implement scaling ?
     SimulationPlane simulationPlane;

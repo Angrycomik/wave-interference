@@ -3,7 +3,6 @@
 #include <iostream>
 #include <cmath>
 
-
 //projecion to space
 sf::Vector3f SimulationPlane::SpaceTransformation(sf::Vector3f p) const{
 
