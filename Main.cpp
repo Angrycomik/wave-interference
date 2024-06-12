@@ -1,5 +1,8 @@
 #include <SFML/Graphics.hpp>
 #include "SimulationPlane.hpp"
+#include "GUI.hpp"
+#include "imgui.h"
+#include "imgui-SFML.h"
 #ifdef NDEBUG
 #include <Windows.h>
 #endif
@@ -11,55 +14,39 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 #endif
 {
     sf::RenderWindow window(sf::VideoMode(800, 600), "SFML works!"); //later gotta implement scaling ?
+    ImGui::SFML::Init(window);
     SimulationPlane simulationPlane;
     simulationPlane.initialize(70);
 
+    bool isPaused = false;
+    bool isAnimationRunning = false;
     bool isDraggin = false;
     sf::Vector2i mouse_pos;
 
     sf::Clock clock;
+    sf::Clock deltaClock;
+    sf::Time pausedTime = sf::Time::Zero;
     while (window.isOpen())
     {
         sf::Event event;
         while (window.pollEvent(event))
         {
+            ImGui::SFML::ProcessEvent(event);
             if (event.type == sf::Event::Closed)
                 window.close();
 
-	    //update rotation
-	    if(isDraggin) {
-		    simulationPlane.Rotate((double)(sf::Mouse::getPosition().x - mouse_pos.x)/(double)1000, 0, 0);
-		    simulationPlane.Rotate(0, 0, (double)(sf::Mouse::getPosition().y - mouse_pos.y)/(double)1000);
-	    }
-
-            if (event.type == sf::Event::MouseButtonPressed)
-		{
-			//if left button pressed
-			if (event.mouseButton.button == sf::Mouse::Left)
-			{
-				if(!isDraggin) mouse_pos = sf::Mouse::getPosition();
-				if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) isDraggin = true;
-			}
-		}
-
-            if (event.type == sf::Event::MouseButtonReleased)
-		{
-			//if left button pressed
-			if (event.mouseButton.button == sf::Mouse::Left)
-			{
-				if (!sf::Mouse::isButtonPressed(sf::Mouse::Left)) isDraggin = false;
-			}
-		}
+         Rotate(simulationPlane,event,isDraggin,mouse_pos);
         }
 
-        float dt = clock.getElapsedTime().asSeconds();
-        simulationPlane.simulate(dt*10);
+        ImGui::SFML::Update(window, deltaClock.restart());
+        DrawGUI(window, simulationPlane,isAnimationRunning,clock, pausedTime, isPaused);
 
         window.clear();
-	simulationPlane.SortFaces();
+	    simulationPlane.SortFaces();
         window.draw(simulationPlane);
+        ImGui::SFML::Render(window);
         window.display();
     }
-
+    ImGui::SFML::Shutdown();
     return 0;
 }
