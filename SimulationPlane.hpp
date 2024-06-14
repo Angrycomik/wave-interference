@@ -124,6 +124,7 @@ public:
 
 	void Rotate(float x, float y, float z);
 	void SortFaces();
+	void AddWaveSource(sf::Vector2f origin, float amplitude, float frequency);
 
 	void initialize(size_t size);
 	void simulate(float dt);

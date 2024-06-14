@@ -156,8 +156,8 @@ void SimulationPlane::initialize(size_t size) {
 
 	m_waveSources.clear();
 	//m_waveSources.push_back(WaveSource(sf::Vector2f(50.0f, 50.0f), 1.0f, 1.0f)); 
-	m_waveSources.push_back(WaveSource(sf::Vector2f(0.2f, 0.3f), 0.04f, 1.0f)); //point
-	m_waveSources.push_back(WaveSource(sf::Vector2f(0.0f, 0.0f), 0.1f, 0.5f)); 
+	//m_waveSources.push_back(WaveSource(sf::Vector2f(0.2f, 0.3f), 0.04f, 1.0f)); //point
+	//m_waveSources.push_back(WaveSource(sf::Vector2f(0.0f, 0.0f), 0.1f, 0.5f)); 
 }
 
 void SimulationPlane::simulate(float dt) {
@@ -171,3 +171,7 @@ void SimulationPlane::simulate(float dt) {
 		vertex.z = newZ;
 	}
 }
+void SimulationPlane::AddWaveSource(sf::Vector2f origin, float amplitude, float frequency) {
+	m_waveSources.push_back(WaveSource(origin, amplitude, frequency));
+}
+

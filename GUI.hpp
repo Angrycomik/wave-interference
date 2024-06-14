@@ -10,10 +10,10 @@
 
 
 
-void DrawGUI(sf::RenderWindow& window, SimulationPlane& simulationPlane, bool& isAnimationRunning, sf::Clock& clock, sf::Time& pausedTime, bool& isPaused);
+void DrawGUI(sf::RenderWindow& window, SimulationPlane& simulationPlane, bool& isAnimationRunning, sf::Clock& clock, sf::Time& pausedTime, bool& isPaused,bool& canDrag);
 void NextFrame(SimulationPlane& simulationPlane, sf::Clock& clock, sf::Time& pausedTime);
-void Rotate(SimulationPlane& simulationPlane, sf::Event& event, bool &isDraggin, sf::Vector2i& mouse_pos);
-void CopyTextureToClipboard(const sf::Texture& texture);
+void Rotate(SimulationPlane& simulationPlane, sf::Event& event, bool &isDraggin, sf::Vector2i& mouse_pos, bool& canDrag);
+void CopyToClipboard(const sf::Texture& texture);
 
 
 

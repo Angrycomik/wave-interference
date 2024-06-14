@@ -21,6 +21,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     bool isPaused = false;
     bool isAnimationRunning = false;
     bool isDraggin = false;
+    bool canDrag = false; // by korzystac z ui
     sf::Vector2i mouse_pos;
 
     sf::Clock clock;
@@ -35,11 +36,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (event.type == sf::Event::Closed)
                 window.close();
 
-         Rotate(simulationPlane,event,isDraggin,mouse_pos);
+         Rotate(simulationPlane,event,isDraggin,mouse_pos,canDrag);
         }
 
         ImGui::SFML::Update(window, deltaClock.restart());
-        DrawGUI(window, simulationPlane,isAnimationRunning,clock, pausedTime, isPaused);
+        DrawGUI(window, simulationPlane,isAnimationRunning,clock, pausedTime, isPaused,canDrag);
 
         window.clear();
 	    simulationPlane.SortFaces();
