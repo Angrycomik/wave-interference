@@ -1,29 +1,25 @@
 #include "GUI.hpp"
 
-void DrawGUI(sf::RenderWindow& window, SimulationPlane& simulationPlane, bool& isAnimationRunning, sf::Clock& clock, sf::Time& pausedTime, bool& isPaused,bool& canDrag) {
-    static int count = 0;
-    static bool showLimitText = false;
-    static bool showNextFrameText = false;
+void DrawGUI(sf::RenderWindow& window, SimulationPlane& simulationPlane, bool& isAnimationRunning, sf::Clock& clock, sf::Time& pausedTime, sf::Time& timeSteps, bool& isPaused) {
     ImGui::Begin("Control Panel");
-    ImGui::Checkbox("Animation", &isAnimationRunning);
-    ImGui::SameLine();
-    ImGui::Checkbox("Rotate Plane", &canDrag);
-    if (ImGui::Button("Next Frame")) {
-        if (!isAnimationRunning && count == 2) {
-            NextFrame(simulationPlane, clock, pausedTime);
-            showNextFrameText = false;
-        }
-        if (count != 2) {
-            showNextFrameText = true;
+
+    float availableWidth = ImGui::GetContentRegionAvail().x;
+
+    ImGui::Checkbox("Show Animation", &isAnimationRunning);
+    float buttonWidth = ImGui::CalcTextSize("Next Step").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+    float buttonOffsetFromRight = availableWidth - buttonWidth;
+
+    if (buttonOffsetFromRight > 0)
+        ImGui::SameLine(buttonOffsetFromRight + 8);
+
+    if (ImGui::Button("Next Step")) {
+        if (!isAnimationRunning) {
+            NextFrame(simulationPlane, clock, pausedTime, timeSteps);
+            clock.restart();
         }
     }
 
-    if (showNextFrameText) {
-        ImGui::SameLine();
-        ImGui::Text("You need 2 wave sources! :c");
-    }
-
-    if (ImGui::Button("Make Screenshot")) {
+    if (ImGui::Button("Save window to Clipboard", ImVec2(availableWidth, 0.0f))) {
         sf::Texture texture;
         texture.create(window.getSize().x, window.getSize().y);
         texture.update(window);
@@ -33,49 +29,75 @@ void DrawGUI(sf::RenderWindow& window, SimulationPlane& simulationPlane, bool& i
         }
     }
 
-    if (ImGui::Button("Add Node")) {
-        if (count < 2) { ImGui::OpenPopup("My Popup"); }
-        else { showLimitText = true; }
-    }
-    if (showLimitText) {
-        //ImGui::SameLine();
-        ImGui::Text("Too much wave sources! :)");
-    }
-
-    if (ImGui::BeginPopupContextItem("My Popup"))
+    if (ImGui::Button("Add Wave Source", ImVec2(availableWidth, 0.0f)))
     {
-        static float positionX = 0.2f; 
-        static float positionY = 0.3f;
-        static float amplitude = 0.04f;
-        static float frequency = 1.0f;
+        ImGui::OpenPopup("WaveSourceContext");
+    }
 
-        ImGui::Text("Example position and frequency will be set by clicking 'Add' 2 times.");
-        ImGui::InputFloat("Position X", &positionX);  // Zrobic wszedzie int, a potem odpowiednio skalowac dla wygody?
-        ImGui::InputFloat("Position Y", &positionY);
-        ImGui::SliderFloat("Amplitude", &amplitude, 0.0f, 1.0f); 
-        ImGui::SliderFloat("Frequency", &frequency, 0.0f, 1.0f); 
-      
-        if (ImGui::Button("Add"))
-        {
-            simulationPlane.AddWaveSource(sf::Vector2f(positionX, positionY), amplitude, frequency);
-            
-            count++;
-            
-            positionX = 0.0f;
-            positionY = 0.0f;
-            amplitude = 0.1f;
-            frequency = 0.5f;
-            
-            ImGui::CloseCurrentPopup();
-        }
+    if (ImGui::BeginPopup("WaveSourceContext"))
+    {
+        ImGui::Text("Wave Source Configuration");
+        ImGui::Separator();
+
+        ImGui::Text("Origin");
+        ImGui::Text("X");
         ImGui::SameLine();
-        if (ImGui::Button("Cancel")) {
+        static float origin[2] = { 0.0f, 0.0f };
+        ImGui::SliderFloat("##originX", &origin[0], -50.0f, 50.0f, "%.1f");
+
+        ImGui::Text("Y");
+        ImGui::SameLine();
+        ImGui::SliderFloat("##originY", &origin[1], -50.0f, 50.0f, "%.1f");
+
+        ImGui::Text("Amplitude");
+        ImGui::Text("A");
+        ImGui::SameLine();
+        static float amplitude = 1.0f;
+        ImGui::SliderFloat("##amplitude", &amplitude, 0.0f, 2.0f, "%.01f");
+
+        ImGui::Text("Frequency");
+        ImGui::Text("f");
+        ImGui::SameLine();
+        static float frequency = 1.0f;
+        ImGui::SliderFloat("##frequency", &frequency, 0.0f, 2.0f, "%.01f");
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Add Wave Source", ImVec2(availableWidth, 0.0f)))
+        {
+            simulationPlane.addWaveSource(sf::Vector2f(origin[0], origin[1]), amplitude, frequency);
             ImGui::CloseCurrentPopup();
         }
 
         ImGui::EndPopup();
     }
 
+    std::vector<WaveSource> waveSources = simulationPlane.getWaveSources();
+    int i = 0;
+    for (const auto& waveSource : waveSources) {
+        ImGui::PushID(i);
+
+        availableWidth = ImGui::GetContentRegionAvail().x;
+
+        ImGui::BeginChild("WaveSourceChild", ImVec2(0, 110), true);
+
+        ImGui::Text("Wave Source #%d", i + 1);
+        ImGui::Separator();
+        ImGui::Text("Origin: (%.1f, %.1f)", waveSource.origin.x, waveSource.origin.y);
+        ImGui::Text("Amplitude: %.1f", waveSource.amplitude);
+        ImGui::Text("Frequency: %.1f", waveSource.frequency);
+        if (ImGui::Button("Delete Wave Source", ImVec2(availableWidth - 16, 0.0f)))
+        {
+            simulationPlane.removeWaveSource(i);
+        }
+
+        ImGui::EndChild();
+
+        ImGui::PopID();
+        i++;
+
+        ImGui::Spacing();
+    }
 
     ImGui::End();
 
@@ -88,42 +110,16 @@ void DrawGUI(sf::RenderWindow& window, SimulationPlane& simulationPlane, bool& i
         isPaused = true;
     }
     if (isAnimationRunning) {
-        float dt = (clock.getElapsedTime() + pausedTime).asSeconds();
-        simulationPlane.simulate(dt*10);
+        float dt = (clock.getElapsedTime() + pausedTime + timeSteps).asSeconds();
+        simulationPlane.simulate(dt * 5);
     }
 }
 
-void NextFrame(SimulationPlane& simulationPlane, sf::Clock& clock, sf::Time& pausedTime) {
-    float dt = (clock.getElapsedTime() + pausedTime).asSeconds();
-    simulationPlane.simulate(dt * 10);
-    pausedTime += clock.getElapsedTime();
-}
-
-void Rotate(SimulationPlane& simulationPlane, sf::Event& event, bool &isDraggin,sf::Vector2i &mouse_pos, bool& canDrag) {
-    //update rotation
-    if (isDraggin && canDrag) {
-        simulationPlane.Rotate((double)(sf::Mouse::getPosition().x - mouse_pos.x) / (double)1000, 0, 0);
-        simulationPlane.Rotate(0, 0, (double)(sf::Mouse::getPosition().y - mouse_pos.y) / (double)1000);
-    }
-
-    if (event.type == sf::Event::MouseButtonPressed)
-    {
-        //if left button pressed
-        if (event.mouseButton.button == sf::Mouse::Left)
-        {
-            if (!isDraggin) mouse_pos = sf::Mouse::getPosition();
-            if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) isDraggin = true;
-        }
-    }
-
-    if (event.type == sf::Event::MouseButtonReleased)
-    {
-        //if left button pressed
-        if (event.mouseButton.button == sf::Mouse::Left)
-        {
-            if (!sf::Mouse::isButtonPressed(sf::Mouse::Left)) isDraggin = false;
-        }
-    }
+void NextFrame(SimulationPlane& simulationPlane, sf::Clock& clock, sf::Time& pausedTime, sf::Time& timeSteps) {
+    sf::Time timeStep = sf::seconds(1.0f / 10.0f);
+    timeSteps += timeStep;
+    float dt = timeSteps.asSeconds() + pausedTime.asSeconds();
+    simulationPlane.simulate(dt * 5);
 }
 
 void CopyToClipboard(const sf::Texture& texture) {
@@ -135,19 +131,18 @@ void CopyToClipboard(const sf::Texture& texture) {
     ZeroMemory(&bmi, sizeof(BITMAPINFO));
     bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
     bmi.bmiHeader.biWidth = width;
-    bmi.bmiHeader.biHeight = -height; // inaczej odwrocony
+    bmi.bmiHeader.biHeight = -height;
     bmi.bmiHeader.biPlanes = 1;
     bmi.bmiHeader.biBitCount = 32;
     bmi.bmiHeader.biCompression = BI_RGB;
 
     const sf::Uint8* pixels = image.getPixelsPtr();
 
-    // konwersja z rgb na bgr
     std::vector<sf::Uint8> converted(width * height * 4);
     for (int i = 0; i < width * height; i++) {
-        converted[i * 4 + 0] = pixels[i * 4 + 2]; 
-        converted[i * 4 + 1] = pixels[i * 4 + 1]; 
-        converted[i * 4 + 2] = pixels[i * 4 + 0]; 
+        converted[i * 4 + 0] = pixels[i * 4 + 2];
+        converted[i * 4 + 1] = pixels[i * 4 + 1];
+        converted[i * 4 + 2] = pixels[i * 4 + 0];
         converted[i * 4 + 3] = pixels[i * 4 + 3];
     }
 
@@ -169,4 +164,3 @@ void CopyToClipboard(const sf::Texture& texture) {
         CloseClipboard();
     }
 }
-
